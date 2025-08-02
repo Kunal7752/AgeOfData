@@ -1,38 +1,35 @@
 services:
-  # This is your Redis database
+
   redis:
-    image: redis:7-alpine          # Use Redis version 7 (lightweight)
-    container_name: aoe-stats-redis # Give it a friendly name
+    image: redis:7-alpine          
+    container_name: aoe-stats-redis 
     ports:
-      - "6379:6379"                # Make Redis available on port 6379
+      - "6379:6379"                
     volumes:
-      - redis_data:/data           # Save Redis data so it survives restarts
+      - redis_data:/data           
     command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
-    restart: unless-stopped        # Restart if it crashes
-    healthcheck:                   # Check if Redis is working
+    restart: unless-stopped        
+    healthcheck:                   
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 3s
       retries: 3
 
-  # Optional: A web interface to see what's in Redis
+
   redis-ui:
     image: rediscommander/redis-commander:latest
     container_name: aoe-stats-redis-ui
-    environment:
-      - REDIS_HOSTS=local:redis:6379
-      - HTTP_USER=admin            # Username: admin
-      - HTTP_PASSWORD=admin        # Password: admin
+    env_file:
+      - .env
     ports:
-      - "8081:8081"               # Access web UI at http://localhost:8081
+      - "8081:8081"
     depends_on:
       redis:
-        condition: service_healthy # Only start after Redis is ready
+        condition: service_healthy
     profiles:
-      - tools                     # Only start with special command
+      - tools
     restart: unless-stopped
 
-# This creates a persistent storage area for Redis data
 volumes:
   redis_data:
     driver: local
