@@ -1,35 +1,55 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React, { useState, useEffect } from 'react';
+import Layout from './components/Layout/Layout';
+import HomePage from './pages/HomePage';
+import MatchesPage from './pages/MatchesPage';
+import PlayersPage from './pages/PlayersPage';
+import CivilizationsPage from './pages/CivilizationsPage';
+import MapsPage from './pages/MapsPage';
+import LeaderboardsPage from './pages/LeaderboardsPage';
+
+// Page components mapping
+const pages = {
+  home: HomePage,
+  matches: MatchesPage,
+  players: PlayersPage,
+  civilizations: CivilizationsPage,
+  maps: MapsPage,
+  leaderboards: LeaderboardsPage
+};
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [currentPage, setCurrentPage] = useState('home');
+  const [theme, setTheme] = useState('dark');
+
+  // Load theme from localStorage on mount
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    setTheme(savedTheme);
+    document.documentElement.setAttribute('data-theme', savedTheme);
+  }, []);
+
+  // Update theme
+  const handleThemeChange = (newTheme) => {
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+    document.documentElement.setAttribute('data-theme', newTheme);
+  };
+
+  // Get current page component
+  const CurrentPageComponent = pages[currentPage] || HomePage;
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div className="min-h-screen bg-base-100">
+      <Layout 
+        currentPage={currentPage}
+        setCurrentPage={setCurrentPage}
+        theme={theme}
+        setTheme={handleThemeChange}
+      >
+        <CurrentPageComponent />
+      </Layout>
+    </div>
+  );
 }
 
-export default App
+export default App;
