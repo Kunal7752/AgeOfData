@@ -18,12 +18,10 @@ class ApiService {
 
     try {
       const response = await fetch(url, config);
-      
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
       }
-
       return await response.json();
     } catch (error) {
       console.error(`API request failed: ${endpoint}`, error);
@@ -33,8 +31,8 @@ class ApiService {
 
   // Matches API
   async getMatches(params = {}) {
-    const queryString = new URLSearchParams(params).toString();
-    return this.request(`/matches${queryString ? `?${queryString}` : ''}`);
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/matches${qs ? `?${qs}` : ''}`);
   }
 
   async getMatchById(gameId) {
@@ -42,8 +40,8 @@ class ApiService {
   }
 
   async getMatchStats(params = {}) {
-    const queryString = new URLSearchParams(params).toString();
-    return this.request(`/matches/stats/overview${queryString ? `?${queryString}` : ''}`);
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/matches/stats/overview${qs ? `?${qs}` : ''}`);
   }
 
   async getLeaderboardStats() {
@@ -52,18 +50,20 @@ class ApiService {
 
   async searchMatches(query, params = {}) {
     const allParams = { q: query, ...params };
-    const queryString = new URLSearchParams(allParams).toString();
-    return this.request(`/matches/search?${queryString}`);
+    const qs = new URLSearchParams(allParams).toString();
+    return this.request(`/matches/search?${qs}`);
   }
 
   async getMatchesByDateRange(startDate, endDate, params = {}) {
-    const queryString = new URLSearchParams(params).toString();
-    return this.request(`/matches/range/${startDate}/${endDate}${queryString ? `?${queryString}` : ''}`);
+    const qs = new URLSearchParams(params).toString();
+    return this.request(
+      `/matches/range/${startDate}/${endDate}${qs ? `?${qs}` : ''}`
+    );
   }
 
   async getTopMatches(params = {}) {
-    const queryString = new URLSearchParams(params).toString();
-    return this.request(`/matches/top/elo${queryString ? `?${queryString}` : ''}`);
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/matches/top/elo${qs ? `?${qs}` : ''}`);
   }
 
   // Players API
@@ -72,50 +72,114 @@ class ApiService {
   }
 
   async getPlayerMatches(profileId, params = {}) {
-    const queryString = new URLSearchParams(params).toString();
-    return this.request(`/players/${profileId}/matches${queryString ? `?${queryString}` : ''}`);
+    const qs = new URLSearchParams(params).toString();
+    return this.request(
+      `/players/${profileId}/matches${qs ? `?${qs}` : ''}`
+    );
   }
 
   async getPlayerRankings(leaderboard, params = {}) {
-    const queryString = new URLSearchParams(params).toString();
-    return this.request(`/players/rankings/${leaderboard}${queryString ? `?${queryString}` : ''}`);
-  }
-
-  // Statistics API
-  async getCivilizationStats(params = {}) {
-    const queryString = new URLSearchParams(params).toString();
-    return this.request(`/stats/civilizations${queryString ? `?${queryString}` : ''}`);
+    const qs = new URLSearchParams(params).toString();
+    return this.request(
+      `/players/rankings/${leaderboard}${qs ? `?${qs}` : ''}`
+    );
   }
 
   async getMapStats(params = {}) {
-    const queryString = new URLSearchParams(params).toString();
-    return this.request(`/stats/maps${queryString ? `?${queryString}` : ''}`);
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/stats/maps${qs ? `?${qs}` : ''}`);
   }
 
   async getTrends(params = {}) {
-    const queryString = new URLSearchParams(params).toString();
-    return this.request(`/stats/trends${queryString ? `?${queryString}` : ''}`);
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/stats/trends${qs ? `?${qs}` : ''}`);
   }
 
   async getEloDistribution(params = {}) {
-    const queryString = new URLSearchParams(params).toString();
-    return this.request(`/stats/elo-distribution${queryString ? `?${queryString}` : ''}`);
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/stats/elo-distribution${qs ? `?${qs}` : ''}`);
   }
 
   async getOpeningStats(params = {}) {
-    const queryString = new URLSearchParams(params).toString();
-    return this.request(`/stats/openings${queryString ? `?${queryString}` : ''}`);
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/stats/openings${qs ? `?${qs}` : ''}`);
   }
 
   async getPatchStats(params = {}) {
-    const queryString = new URLSearchParams(params).toString();
-    return this.request(`/stats/patches${queryString ? `?${queryString}` : ''}`);
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/stats/patches${qs ? `?${qs}` : ''}`);
   }
 
   async getPerformanceAnalytics(params = {}) {
-    const queryString = new URLSearchParams(params).toString();
-    return this.request(`/stats/analytics/performance${queryString ? `?${queryString}` : ''}`);
+    const qs = new URLSearchParams(params).toString();
+    return this.request(
+      `/stats/analytics/performance${qs ? `?${qs}` : ''}`
+    );
   }
+
+  // Civilization‐detail summary (still useful if you need it)
+  async getCivilizationDetail(civName, params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request(
+      `/stats/civilizations/${civName}${qs ? `?${qs}` : ''}`
+    );
+  }
+
+  // ───── New, chart‐specific civilization endpoints ─────
+
+  /** Win Rate vs Game Length */
+  async getCivGameLength(civName) {
+    return this.request(`/stats/civilizations/${civName}/length`);
+  }
+
+  /** Win Rate by Patch */
+  async getCivWinRateByPatch(civName) {
+    return this.request(`/stats/civilizations/${civName}/patch`);
+  }
+
+  /** Win Rate by Rating buckets */
+  async getCivWinRateByRating(civName) {
+    return this.request(`/stats/civilizations/${civName}/rating`);
+  }
+
+  /** Rank of this civ per patch */
+  async getCivRankByPatch(civName) {
+    return this.request(`/stats/civilizations/${civName}/rank`);
+  }
+
+  /** Play Rate by Rating buckets */
+  async getCivPlayRateByRating(civName) {
+    return this.request(`/stats/civilizations/${civName}/playrate/rating`);
+  }
+
+  /** Play Rate by Patch */
+  async getCivPlayRateByPatch(civName) {
+    return this.request(`/stats/civilizations/${civName}/playrate/patch`);
+  }
+
+  /** Highest Win Rates Against other civs */
+  async getCivBestAgainst(civName) {
+    return this.request(`/stats/civilizations/${civName}/best-against`);
+  }
+
+  /** Lowest Win Rates Against other civs */
+  async getCivWorstAgainst(civName) {
+    return this.request(`/stats/civilizations/${civName}/worst-against`);
+  }
+
+  /** Maps-specific stats for this civ */
+  async getCivMaps(civName) {
+    return this.request(`/stats/civilizations/${civName}/maps`);
+  }
+
+  async getCivilizationStats(params = {}) {
+    return this.request('/stats/civilizations'); // Remove -fast suffix and params
+  }
+
+  async getCivWinRateByDuration(civName) {
+    return this.request(`/stats/civilizations/${civName}/duration`);
+  }
+
 }
 
 export default new ApiService();

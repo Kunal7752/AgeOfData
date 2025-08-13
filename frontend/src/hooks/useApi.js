@@ -122,3 +122,124 @@ export const usePerformanceAnalytics = (params = {}) => {
     [JSON.stringify(params)]
   );
 };
+
+// export const useCivilizationDetail = (civName, params = {}) => {
+//   return useApi(
+//     () => apiService.getCivilizationDetail(civName, params),
+//     [civName, JSON.stringify(params)],
+//     !!civName
+//   );
+// };
+
+export const useCivilizationDetail = (civName) => {
+  // 1) summary (totalPicks, wins, winRate, pickRate, avgRating, ageUpTimes…)
+  const summary    = useApi(
+    () => apiService.getCivilizationDetail(civName),
+    [civName],
+    !!civName
+  );
+
+  // 2) chart‐specific calls
+  const byLength   = useApi(
+    () => apiService.getCivGameLength(civName),
+    [civName],
+    !!civName
+  );
+
+  const byDuration = useApi(
+    () => apiService.getCivWinRateByDuration(civName),
+    [civName],
+    !!civName
+  );
+
+  const byPatch    = useApi(
+    () => apiService.getCivWinRateByPatch(civName),
+    [civName],
+    !!civName
+  );
+  const byRating   = useApi(
+    () => apiService.getCivWinRateByRating(civName),
+    [civName],
+    !!civName
+  );
+  const byRank     = useApi(
+    () => apiService.getCivRankByPatch(civName),
+    [civName],
+    !!civName
+  );
+  const playRtRate = useApi(
+    () => apiService.getCivPlayRateByRating(civName),
+    [civName],
+    !!civName
+  );
+  const playRtPatch= useApi(
+    () => apiService.getCivPlayRateByPatch(civName),
+    [civName],
+    !!civName
+  );
+  const bestVs     = useApi(
+    () => apiService.getCivBestAgainst(civName),
+    [civName],
+    !!civName
+  );
+  const worstVs    = useApi(
+    () => apiService.getCivWorstAgainst(civName),
+    [civName],
+    !!civName
+  );
+  const maps       = useApi(
+    () => apiService.getCivMaps(civName),
+    [civName],
+    !!civName
+  );
+
+  // Combined loading & error
+  const loading = [
+    summary.loading,
+    byLength.loading,
+    byPatch.loading,
+    byDuration.loading,
+    byRating.loading,
+    byRank.loading,
+    playRtRate.loading,
+    playRtPatch.loading,
+    bestVs.loading,
+    worstVs.loading,
+    maps.loading
+  ].some(Boolean);
+
+  const error = summary.error ||
+                byLength.error ||
+                byDuration.error ||
+                byPatch.error ||
+                byRating.error ||
+                byRank.error ||
+                playRtRate.error ||
+                playRtPatch.error ||
+                bestVs.error ||
+                worstVs.error ||
+                maps.error;
+
+  // Merge everything into one `data` object for your page to consume
+  const data = {
+    ...summary.data,
+    winRateVsGameLength: byLength.data    || [],
+    winRateVsDuration: byDuration.data?.durationAnalysis || [],
+    winRateByPatch:      byPatch.data     || [],
+    winRateByRating:     byRating.data    || [],
+    rankByPatch:         byRank.data      || [],
+    playRateByRating:    playRtRate.data  || [],
+    playRateByPatch:     playRtPatch.data || [],
+    bestVs:              bestVs.data      || [],
+    worstVs:             worstVs.data     || [],
+    maps:                maps.data        || []
+  };
+
+  return {
+    data,
+    loading,
+    error,
+    refetch: summary.refetch
+  };
+};
+

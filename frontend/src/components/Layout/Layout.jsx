@@ -3,7 +3,7 @@ import Navbar from './Navbar';
 
 const Layout = ({ children, currentPage, setCurrentPage, theme, setTheme }) => {
   return (
-    <div className="drawer">
+    <div className="drawer drawer-mobile">
       <input id="drawer-toggle" type="checkbox" className="drawer-toggle" />
       <div className="drawer-content flex flex-col">
         <Navbar 
@@ -18,7 +18,7 @@ const Layout = ({ children, currentPage, setCurrentPage, theme, setTheme }) => {
       </div>
       
       {/* Mobile drawer */}
-      <div className="drawer-side lg:hidden">
+      <div className="drawer-side">
         <label htmlFor="drawer-toggle" className="drawer-overlay"></label>
         <aside className="w-64 min-h-full bg-base-200">
           <div className="p-4">

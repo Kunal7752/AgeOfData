@@ -1,340 +1,257 @@
 import React, { useState } from 'react';
-import { useCivilizationStats } from '../hooks/useApi';
-import { formatNumber, formatPercentage, formatCivilization } from '../utils/formatters';
+import { usePlayerRankings } from '../hooks/useApi';
+import { formatNumber, formatElo, formatLeaderboard, getEloColor, formatRelativeTime } from '../utils/formatters';
 import LoadingSpinner from '../components/Common/LoadingSpinner';
 import ErrorMessage from '../components/Common/ErrorMessage';
 
-const CivilizationsPage = () => {
+const PlayersPage = () => {
+  const [selectedLeaderboard, setSelectedLeaderboard] = useState('2'); // Default to 1v1 RM
   const [filters, setFilters] = useState({
-    leaderboard: '',
-    patch: '',
-    timeframe: '30',
-    minElo: '',
-    maxElo: '',
-    minMatches: '50'
+    page: 1,
+    limit: 50
   });
 
-  const { data, loading, error, refetch } = useCivilizationStats(filters);
+  const { data, loading, error, refetch } = usePlayerRankings(selectedLeaderboard, filters);
 
-  const handleFilterChange = (key, value) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+  const handleLeaderboardChange = (leaderboard) => {
+    setSelectedLeaderboard(leaderboard);
+    setFilters(prev => ({ ...prev, page: 1 }));
   };
 
-  if (loading) return <LoadingSpinner text="Loading civilization statistics..." />;
+  const handlePageChange = (newPage) => {
+    setFilters(prev => ({ ...prev, page: newPage }));
+  };
+
+  if (loading) return <LoadingSpinner text="Loading player rankings..." />;
   if (error) return <ErrorMessage message={error} onRetry={refetch} />;
 
-  const civilizations = data?.civilizations || [];
+  const players = data?.rankings || [];
 
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-4xl font-bold mb-4">
-          <i className="fas fa-flag mr-3 text-primary"></i>
-          Civilization Statistics
+          <i className="fas fa-users mr-3 text-primary"></i>
+          Player Rankings
         </h1>
         <p className="text-lg text-base-content/70">
-          Comprehensive performance analysis of all Age of Empires II civilizations
+          Top players across all Age of Empires II competitive leaderboards
         </p>
       </div>
 
-      {/* Filters */}
+      {/* Leaderboard Selector */}
       <div className="card bg-base-200 shadow-xl mb-8">
         <div className="card-body">
           <h2 className="card-title mb-4">
-            <i className="fas fa-filter mr-2"></i>
-            Filters
+            <i className="fas fa-trophy mr-2"></i>
+            Select Leaderboard
           </h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">Leaderboard</span>
-              </label>
-              <select
-                className="select select-bordered"
-                value={filters.leaderboard}
-                onChange={(e) => handleFilterChange('leaderboard', e.target.value)}
-              >
-                <option value="">All Leaderboards</option>
-                <option value="2">1v1 Random Map</option>
-                <option value="3">Team Random Map</option>
-                <option value="4">1v1 Death Match</option>
-                <option value="13">1v1 Empire Wars</option>
-                <option value="14">Team Empire Wars</option>
-              </select>
-            </div>
-
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">Timeframe</span>
-              </label>
-              <select
-                className="select select-bordered"
-                value={filters.timeframe}
-                onChange={(e) => handleFilterChange('timeframe', e.target.value)}
-              >
-                <option value="7">Last 7 days</option>
-                <option value="30">Last 30 days</option>
-                <option value="90">Last 90 days</option>
-                <option value="all">All time</option>
-              </select>
-            </div>
-
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">Min ELO</span>
-              </label>
-              <input
-                type="number"
-                placeholder="1000"
-                className="input input-bordered"
-                value={filters.minElo}
-                onChange={(e) => handleFilterChange('minElo', e.target.value)}
-              />
-            </div>
-
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">Max ELO</span>
-              </label>
-              <input
-                type="number"
-                placeholder="2000"
-                className="input input-bordered"
-                value={filters.maxElo}
-                onChange={(e) => handleFilterChange('maxElo', e.target.value)}
-              />
-            </div>
-
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">Min Matches</span>
-              </label>
-              <input
-                type="number"
-                placeholder="50"
-                className="input input-bordered"
-                value={filters.minMatches}
-                onChange={(e) => handleFilterChange('minMatches', e.target.value)}
-              />
-            </div>
-
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text opacity-0">Clear</span>
-              </label>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            {[
+              { id: '2', name: '1v1 Random Map', icon: 'fa-user' },
+              { id: '3', name: 'Team Random Map', icon: 'fa-users' },
+              { id: '4', name: '1v1 Death Match', icon: 'fa-skull' },
+              { id: '13', name: '1v1 Empire Wars', icon: 'fa-crown' },
+              { id: '14', name: 'Team Empire Wars', icon: 'fa-crown' }
+            ].map((lb) => (
               <button
-                className="btn btn-outline"
-                onClick={() => setFilters({
-                  leaderboard: '',
-                  patch: '',
-                  timeframe: '30',
-                  minElo: '',
-                  maxElo: '',
-                  minMatches: '50'
-                })}
+                key={lb.id}
+                onClick={() => handleLeaderboardChange(lb.id)}
+                className={`btn ${selectedLeaderboard === lb.id ? 'btn-primary' : 'btn-outline'} h-auto py-4`}
               >
-                <i className="fas fa-times mr-2"></i>
-                Clear
+                <div className="text-center">
+                  <i className={`fas ${lb.icon} text-2xl mb-2`}></i>
+                  <div className="text-sm font-medium">{lb.name}</div>
+                </div>
               </button>
-            </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Summary Stats */}
-      {data?.meta && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="stat bg-base-200 rounded-lg shadow-xl">
-            <div className="stat-figure text-primary">
-              <i className="fas fa-flag text-3xl"></i>
-            </div>
-            <div className="stat-title">Total Civilizations</div>
-            <div className="stat-value text-primary">{data.meta.totalCivilizations}</div>
+      {/* Current Leaderboard Info */}
+      <div className="mb-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h3 className="text-2xl font-bold">
+              {formatLeaderboard(selectedLeaderboard)}
+            </h3>
+            <p className="text-base-content/70">
+              Showing top {players.length} players
+            </p>
           </div>
           
-          <div className="stat bg-base-200 rounded-lg shadow-xl">
-            <div className="stat-figure text-secondary">
-              <i className="fas fa-sword text-3xl"></i>
-            </div>
-            <div className="stat-title">Total Matches</div>
-            <div className="stat-value text-secondary">{formatNumber(data.meta.totalMatches)}</div>
-          </div>
-
-          <div className="stat bg-base-200 rounded-lg shadow-xl">
-            <div className="stat-figure text-accent">
-              <i className="fas fa-calendar text-3xl"></i>
-            </div>
-            <div className="stat-title">Data Range</div>
-            <div className="stat-value text-accent text-lg">
-              {filters.timeframe === 'all' ? 'All Time' : `${filters.timeframe} days`}
-            </div>
+          <div className="form-control">
+            <select
+              className="select select-bordered"
+              value={filters.limit}
+              onChange={(e) => setFilters(prev => ({ ...prev, limit: e.target.value, page: 1 }))}
+            >
+              <option value="25">Top 25</option>
+              <option value="50">Top 50</option>
+              <option value="100">Top 100</option>
+            </select>
           </div>
         </div>
-      )}
-
-      {/* Civilizations Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {civilizations.map((civ, index) => (
-          <div key={civ.civilization || index} className="card bg-base-200 shadow-xl border border-base-300 hover:border-primary transition-colors">
-            <div className="card-body">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="card-title text-xl">
-                  <i className="fas fa-shield-alt mr-2 text-primary"></i>
-                  {formatCivilization(civ.civilization)}
-                </h3>
-                <div className="badge badge-outline badge-lg">
-                  #{index + 1}
-                </div>
-              </div>
-
-              {/* Win Rate Progress */}
-              <div className="mb-4">
-                <div className="flex justify-between text-sm mb-1">
-                  <span>Win Rate</span>
-                  <span className="font-bold">{formatPercentage(civ.stats.winRate)}</span>
-                </div>
-                <progress 
-                  className={`progress w-full ${
-                    civ.stats.winRate >= 0.55 ? 'progress-success' : 
-                    civ.stats.winRate >= 0.50 ? 'progress-warning' : 'progress-error'
-                  }`} 
-                  value={civ.stats.winRate * 100} 
-                  max="100"
-                ></progress>
-              </div>
-
-              {/* Pick Rate Progress */}
-              <div className="mb-4">
-                <div className="flex justify-between text-sm mb-1">
-                  <span>Pick Rate</span>
-                  <span className="font-bold">{civ.stats.pickRate?.toFixed(1)}%</span>
-                </div>
-                <progress 
-                  className="progress progress-info w-full" 
-                  value={civ.stats.pickRate || 0} 
-                  max="15"
-                ></progress>
-              </div>
-
-              {/* Statistics Grid */}
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="bg-base-100 p-3 rounded-lg">
-                  <div className="text-xs text-base-content/70 uppercase tracking-wide">Total Picks</div>
-                  <div className="text-lg font-bold text-primary">{formatNumber(civ.stats.totalPicks)}</div>
-                </div>
-                
-                <div className="bg-base-100 p-3 rounded-lg">
-                  <div className="text-xs text-base-content/70 uppercase tracking-wide">Wins</div>
-                  <div className="text-lg font-bold text-success">{formatNumber(civ.stats.wins)}</div>
-                </div>
-
-                <div className="bg-base-100 p-3 rounded-lg">
-                  <div className="text-xs text-base-content/70 uppercase tracking-wide">Avg ELO</div>
-                  <div className="text-lg font-bold text-secondary">{civ.stats.avgRating}</div>
-                </div>
-
-                <div className="bg-base-100 p-3 rounded-lg">
-                  <div className="text-xs text-base-content/70 uppercase tracking-wide">Players</div>
-                  <div className="text-lg font-bold text-accent">{formatNumber(civ.stats.uniquePlayers)}</div>
-                </div>
-              </div>
-
-              {/* Age Up Times */}
-              {civ.ageUpTimes && (
-                <div className="mt-4">
-                  <h4 className="font-semibold mb-2 text-sm">Average Age Up Times</h4>
-                  <div className="grid grid-cols-3 gap-2 text-xs">
-                    {civ.ageUpTimes.feudal > 0 && (
-                      <div className="bg-base-100 p-2 rounded text-center">
-                        <div className="text-base-content/70">Feudal</div>
-                        <div className="font-bold">{Math.round(civ.ageUpTimes.feudal / 60)}:{String(civ.ageUpTimes.feudal % 60).padStart(2, '0')}</div>
-                      </div>
-                    )}
-                    {civ.ageUpTimes.castle > 0 && (
-                      <div className="bg-base-100 p-2 rounded text-center">
-                        <div className="text-base-content/70">Castle</div>
-                        <div className="font-bold">{Math.round(civ.ageUpTimes.castle / 60)}:{String(civ.ageUpTimes.castle % 60).padStart(2, '0')}</div>
-                      </div>
-                    )}
-                    {civ.ageUpTimes.imperial > 0 && (
-                      <div className="bg-base-100 p-2 rounded text-center">
-                        <div className="text-base-content/70">Imperial</div>
-                        <div className="font-bold">{Math.round(civ.ageUpTimes.imperial / 60)}:{String(civ.ageUpTimes.imperial % 60).padStart(2, '0')}</div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Action Button */}
-              <div className="card-actions justify-end mt-4">
-                <button className="btn btn-primary btn-sm btn-outline">
-                  <i className="fas fa-chart-line mr-2"></i>
-                  View Details
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
       </div>
 
-      {/* Empty State */}
-      {civilizations.length === 0 && (
-        <div className="text-center py-16">
-          <i className="fas fa-flag text-6xl text-base-content/30 mb-4"></i>
-          <h3 className="text-2xl font-bold text-base-content/70 mb-2">No Data Available</h3>
-          <p className="text-base-content/50 mb-6">
-            No civilization data found with the current filters. Try adjusting your search criteria.
-          </p>
-          <button 
-            className="btn btn-primary btn-outline"
-            onClick={() => setFilters({
-              leaderboard: '',
-              patch: '',
-              timeframe: '30',
-              minElo: '',
-              maxElo: '',
-              minMatches: '10'
-            })}
-          >
-            <i className="fas fa-redo mr-2"></i>
-            Reset Filters
-          </button>
+      {/* Rankings Table */}
+      <div className="card bg-base-200 shadow-xl">
+        <div className="card-body p-0">
+          <div className="overflow-x-auto">
+            <table className="table table-zebra">
+              <thead>
+                <tr className="bg-base-300">
+                  <th className="text-center">Rank</th>
+                  <th>Player</th>
+                  <th className="text-center">Rating</th>
+                  <th className="text-center">Matches</th>
+                  <th className="text-center">Win Rate</th>
+                  <th className="text-center">Last Played</th>
+                </tr>
+              </thead>
+              <tbody>
+                {players.length > 0 ? (
+                  players.map((player, index) => (
+                    <tr key={player._id || index} className="hover">
+                      <td className="text-center">
+                        <div className="flex items-center justify-center">
+                          {index < 3 && (
+                            <i className={`fas fa-medal mr-2 ${
+                              index === 0 ? 'text-yellow-500' :
+                              index === 1 ? 'text-gray-400' :
+                              'text-amber-600'
+                            }`}></i>
+                          )}
+                          <span className="font-bold text-lg">
+                            #{((filters.page - 1) * filters.limit) + index + 1}
+                          </span>
+                        </div>
+                      </td>
+                      
+                      <td>
+                        <div className="flex items-center space-x-3">
+                          <div className="avatar placeholder">
+                            <div className="bg-primary text-primary-content rounded-lg w-10 h-10">
+                              <i className="fas fa-user"></i>
+                            </div>
+                          </div>
+                          <div>
+                            <div className="font-bold">Player #{player._id}</div>
+                            <div className="text-sm text-base-content/70">
+                              Profile ID: {player._id}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      
+                      <td className="text-center">
+                        <span className={`font-bold text-lg ${getEloColor(player.latestRating)}`}>
+                          {formatElo(player.latestRating)}
+                        </span>
+                      </td>
+                      
+                      <td className="text-center">
+                        <span className="font-medium">
+                          {formatNumber(player.totalMatches)}
+                        </span>
+                      </td>
+                      
+                      <td className="text-center">
+                        <div className="flex flex-col items-center">
+                          <span className={`font-bold ${
+                            player.winRate >= 0.6 ? 'text-success' :
+                            player.winRate >= 0.5 ? 'text-warning' :
+                            'text-error'
+                          }`}>
+                            {(player.winRate * 100).toFixed(1)}%
+                          </span>
+                          <div className="text-xs text-base-content/70">
+                            {player.wins}W / {player.totalMatches - player.wins}L
+                          </div>
+                        </div>
+                      </td>
+                      
+                      <td className="text-center text-sm">
+                        {formatRelativeTime(player.lastPlayed)}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="6" className="text-center py-8">
+                      <div className="text-base-content/50">
+                        <i className="fas fa-users text-4xl mb-4"></i>
+                        <p>No player data available for this leaderboard</p>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {/* Pagination */}
+      {data?.totalPages > 1 && (
+        <div className="flex justify-center mt-8">
+          <div className="join">
+            <button
+              className="join-item btn"
+              onClick={() => handlePageChange(filters.page - 1)}
+              disabled={filters.page <= 1}
+            >
+              <i className="fas fa-chevron-left"></i>
+            </button>
+            
+            <span className="join-item btn btn-disabled">
+              Page {filters.page} of {data.totalPages}
+            </span>
+            
+            <button
+              className="join-item btn"
+              onClick={() => handlePageChange(filters.page + 1)}
+              disabled={filters.page >= data.totalPages}
+            >
+              <i className="fas fa-chevron-right"></i>
+            </button>
+          </div>
         </div>
       )}
 
-      {/* Statistics Info */}
+      {/* Player Stats Info */}
       <div className="mt-12 card bg-gradient-to-r from-info/10 to-primary/10 border border-info/20">
         <div className="card-body">
           <h3 className="card-title text-info">
             <i className="fas fa-info-circle mr-2"></i>
-            Understanding the Statistics
+            Understanding Player Rankings
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
             <div>
+              <h4 className="font-semibold mb-2">Rating System</h4>
+              <p className="text-sm text-base-content/70">
+                Player ratings use the Elo system. Higher ratings indicate stronger players. Ratings change based on match results and opponent strength.
+              </p>
+            </div>
+            <div>
               <h4 className="font-semibold mb-2">Win Rate</h4>
               <p className="text-sm text-base-content/70">
-                Percentage of matches won with this civilization. Higher values indicate stronger performance.
+                Percentage of matches won. A 60%+ win rate is excellent, 50-60% is good, and below 50% indicates room for improvement.
               </p>
             </div>
             <div>
-              <h4 className="font-semibold mb-2">Pick Rate</h4>
+              <h4 className="font-semibold mb-2">Activity</h4>
               <p className="text-sm text-base-content/70">
-                How often this civilization is chosen relative to others. Popular civilizations have higher pick rates.
+                "Last Played" shows when the player was most recently active. Regular play helps maintain accurate ratings.
               </p>
             </div>
             <div>
-              <h4 className="font-semibold mb-2">Average ELO</h4>
+              <h4 className="font-semibold mb-2">Leaderboards</h4>
               <p className="text-sm text-base-content/70">
-                Mean skill level of players who choose this civilization. Indicates complexity or appeal at different skill levels.
-              </p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-2">Age Up Times</h4>
-              <p className="text-sm text-base-content/70">
-                Average time to reach each age. Faster times generally indicate economic advantages or strategic focus.
+                Different game modes have separate rankings. 1v1 Random Map is the most competitive, while team games emphasize cooperation.
               </p>
             </div>
           </div>
@@ -344,4 +261,4 @@ const CivilizationsPage = () => {
   );
 };
 
-export default CivilizationsPage;
+export default PlayersPage;
