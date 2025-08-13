@@ -13,6 +13,7 @@ const errorHandler = require('./middleware/errorHandler');
 const matchRoutes = require('./routes/matches');
 const playerRoutes = require('./routes/player');
 const statsRoutes = require('./routes/stats');
+const { updateRecentRankings } = require('./scripts/update-rankings');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -96,6 +97,43 @@ app.use('*', (req, res) => {
 // Error handling middleware
 app.use(errorHandler);
 
+const startBackgroundJobs = () => {
+  console.log('🔄 Starting background jobs...');
+  
+  // Update rankings every 2 hours
+  const updateInterval = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
+  
+  // Recurring update every 2 hours
+  setInterval(async () => {
+    try {
+      console.log('⏰ Running scheduled ranking update...');
+      await updateRecentRankings();
+      console.log('✅ Scheduled ranking update completed');
+    } catch (error) {
+      console.error('❌ Scheduled ranking update failed:', error.message);
+    }
+  }, updateInterval);
+  
+  // Initial update after 5 minutes (give server time to start properly)
+  setTimeout(async () => {
+    try {
+      console.log('🚀 Running initial ranking update...');
+      await updateRecentRankings();
+      console.log('✅ Initial ranking update completed');
+    } catch (error) {
+      console.error('❌ Initial ranking update failed:', error.message);
+    }
+  }, 5 * 60 * 1000); // 5 minutes delay
+  
+  console.log('📅 Background jobs scheduled:');
+  console.log('   - Initial update: in 5 minutes');
+  console.log('   - Recurring updates: every 2 hours');
+};
+
+// STEP 4: Modify your app.listen() section
+// Find where you have app.listen() and modify it like this:
+
+
 // Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('SIGTERM received, shutting down gracefully');
@@ -109,6 +147,14 @@ process.on('SIGINT', () => {
 
 // Start server
 app.listen(PORT, () => {
+
+  if (process.env.NODE_ENV === 'production' || process.env.ENABLE_BACKGROUND_JOBS === 'true') {
+    startBackgroundJobs();
+    console.log('✅ Background jobs enabled');
+  } else {
+    console.log('💡 Background jobs disabled.');
+    console.log('💡 To enable: set ENABLE_BACKGROUND_JOBS=true or NODE_ENV=production');
+  }
   console.log(`
 🎮 AoE Stats API Server Started
 🚀 Port: ${PORT}

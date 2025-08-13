@@ -115,14 +115,18 @@ const cache = (duration = 300) => {
       
       res.json = function(data) {
         // Save this response to cache for next time
-        if (redisAvailable && client) {
-          client.setEx(key, duration, JSON.stringify(data)).catch(err => {
-            console.warn('⚠️  Failed to cache data:', err.message);
-          });
-        }
-        
-        // Send the response normally
-        originalJson.call(this, data);
+        const isError = data?.error || data?.success === false || this.statusCode >= 400;
+  
+          if (redisAvailable && client && !isError) {
+            client.setEx(key, duration, JSON.stringify(data)).catch(err => {
+              console.warn('⚠️  Failed to cache data:', err.message);
+            });
+            console.log(`💾 Caching successful response for: ${key}`);
+          } else if (isError) {
+            console.log(`🚫 Not caching error response for: ${key}`);
+          }
+          
+          originalJson.call(this, data);
       };
 
       next();
