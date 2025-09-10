@@ -1,4 +1,4 @@
-// utils/formatters.js - Utility functions for formatting data
+// utils/formatters.js - FINAL FIXED VERSION matching backend duration detection
 export const formatNumber = (num) => {
   if (num === null || num === undefined) return 'N/A';
   return new Intl.NumberFormat().format(num);
@@ -9,14 +9,29 @@ export const formatPercentage = (value, decimals = 1) => {
   return `${(value * 100).toFixed(decimals)}%`;
 };
 
-export const formatDuration = (seconds) => {
-  if (!seconds || seconds < 0) return 'N/A';
-  
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  
+// FIXED: Use exact same logic as backend stats.js convertDurationToMinutes function
+export const formatDuration = (durationValue) => {
+  if (!durationValue || durationValue <= 0) return 'N/A';
+
+  let minutes;
+
+  // Detect format based on magnitude - EXACT backend logic
+  if (durationValue > 100000000) {
+    // Nanoseconds (very large numbers)
+    minutes = Math.round(durationValue / 60000000000);
+  } else if (durationValue > 100000) {
+    // Milliseconds  
+    minutes = Math.round(durationValue / 60000);
+  } else if (durationValue > 1000) {
+    // Seconds
+    minutes = Math.round(durationValue / 60);
+  } else {
+    // Already in minutes
+    minutes = Math.round(durationValue);
+  }
+
   if (minutes < 60) {
-    return `${minutes}m ${remainingSeconds}s`;
+    return `${minutes}m`;
   }
   
   const hours = Math.floor(minutes / 60);

@@ -17,7 +17,7 @@ const Layout = ({ children, currentPage, setCurrentPage, theme, setTheme }) => {
         </main>
       </div>
       
-      {/* Mobile drawer */}
+      {/* Mobile drawer - simplified navigation */}
       <div className="drawer-side">
         <label htmlFor="drawer-toggle" className="drawer-overlay"></label>
         <aside className="w-64 min-h-full bg-base-200">
@@ -31,24 +31,6 @@ const Layout = ({ children, currentPage, setCurrentPage, theme, setTheme }) => {
                 >
                   <i className="fas fa-home mr-2"></i>
                   Home
-                </button>
-              </li>
-              <li>
-                <button 
-                  onClick={() => setCurrentPage('matches')}
-                  className={`${currentPage === 'matches' ? 'active' : ''}`}
-                >
-                  <i className="fas fa-sword mr-2"></i>
-                  Matches
-                </button>
-              </li>
-              <li>
-                <button 
-                  onClick={() => setCurrentPage('players')}
-                  className={`${currentPage === 'players' ? 'active' : ''}`}
-                >
-                  <i className="fas fa-users mr-2"></i>
-                  Players
                 </button>
               </li>
               <li>
@@ -71,11 +53,11 @@ const Layout = ({ children, currentPage, setCurrentPage, theme, setTheme }) => {
               </li>
               <li>
                 <button 
-                  onClick={() => setCurrentPage('leaderboards')}
-                  className={`${currentPage === 'leaderboards' ? 'active' : ''}`}
+                  onClick={() => setCurrentPage('insights')}
+                  className={`${currentPage === 'insights' ? 'active' : ''}`}
                 >
-                  <i className="fas fa-trophy mr-2"></i>
-                  Leaderboards
+                  <i className="fas fa-chart-bar mr-2"></i>
+                  Insights
                 </button>
               </li>
             </ul>

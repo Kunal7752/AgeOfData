@@ -10,12 +10,10 @@ import {
 
 import Layout from './components/Layout/Layout';
 import HomePage               from './pages/HomePage';
-import MatchesPage            from './pages/MatchesPage';
-import PlayersPage            from './pages/PlayersPage';
 import CivilizationsPage      from './pages/CivilizationsPage';
 import CivilizationDetailPage from './pages/CivilizationDetailPage';
 import MapsPage               from './pages/MapsPage';
-import LeaderboardsPage       from './pages/LeaderboardsPage';
+import InsightsPage           from './pages/InsightsPage';
 
 function App() {
   // Theme state & persistence
@@ -34,20 +32,18 @@ function App() {
   // Figure out current page from URL
   const location = useLocation();
   const navigate = useNavigate();
-  const seg = location.pathname.split('/')[1] || 'civs';
+  const seg = location.pathname.split('/')[1] || 'home';
   const currentPage = seg === 'civs' ? 'civilizations' : seg;
 
-  // Map page IDs back to routes for nav buttons
+  // Map page IDs back to routes for nav buttons - simplified
   const pageRoutes = {
     home: '/home',
-    matches: '/matches',
-    players: '/players',
     civilizations: '/civs',
     maps: '/maps',
-    leaderboards: '/leaderboards'
+    insights: '/insights'
   };
   const setCurrentPage = page => {
-    navigate(pageRoutes[page] || '/civs');
+    navigate(pageRoutes[page] || '/home');
   };
 
   return (
@@ -59,17 +55,15 @@ function App() {
         setTheme={handleThemeChange}
       >
         <Routes>
-          {/* Redirect root to /civs */}
-          <Route path="/" element={<Navigate to="/civs" replace />} />
+          {/* Redirect root to /home */}
+          <Route path="/" element={<Navigate to="/home" replace />} />
 
-          {/* Main pages */}
+          {/* Simplified pages */}
           <Route path="/home" element={<HomePage />} />
-          <Route path="/matches" element={<MatchesPage />} />
-          <Route path="/players" element={<PlayersPage />} />
           <Route path="/civs" element={<CivilizationsPage />} />
           <Route path="/civs/:civName" element={<CivilizationDetailPage />} />
           <Route path="/maps" element={<MapsPage />} />
-          <Route path="/leaderboards" element={<LeaderboardsPage />} />
+          <Route path="/insights" element={<InsightsPage />} />
 
           {/* 404 */}
           <Route path="*" element={<h1 className="p-8">Page Not Found</h1>} />

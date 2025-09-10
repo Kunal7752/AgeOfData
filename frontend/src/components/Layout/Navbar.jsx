@@ -10,13 +10,12 @@ const Navbar = ({ currentPage, setCurrentPage, theme, setTheme }) => {
     { name: 'aqua', label: 'Aqua', icon: 'fas fa-water' }
   ];
 
+  // Simplified navigation - only Home, Civilizations, Maps, Insights
   const navItems = [
     { id: 'home', label: 'Home', icon: 'fas fa-home' },
-    { id: 'matches', label: 'Matches', icon: 'fas fa-sword' },
-    { id: 'players', label: 'Players', icon: 'fas fa-users' },
     { id: 'civilizations', label: 'Civilizations', icon: 'fas fa-flag' },
     { id: 'maps', label: 'Maps', icon: 'fas fa-map' },
-    { id: 'leaderboards', label: 'Leaderboards', icon: 'fas fa-trophy' }
+    { id: 'insights', label: 'Insights', icon: 'fas fa-chart-bar' }
   ];
 
   return (
@@ -57,16 +56,7 @@ const Navbar = ({ currentPage, setCurrentPage, theme, setTheme }) => {
       </div>
 
       <div className="navbar-end space-x-2">
-        {/* Search */}
-        <div className="form-control hidden md:block">
-          <input 
-            type="text" 
-            placeholder="Search players, matches..." 
-            className="input input-bordered input-sm w-64" 
-          />
-        </div>
-
-        {/* Theme selector */}
+        {/* Theme selector only */}
         <div className="dropdown dropdown-end">
           <div tabIndex={0} role="button" className="btn btn-ghost btn-circle">
             <i className="fas fa-palette text-lg"></i>
@@ -91,12 +81,6 @@ const Navbar = ({ currentPage, setCurrentPage, theme, setTheme }) => {
             ))}
           </ul>
         </div>
-
-        {/* Stats button */}
-        <button className="btn btn-primary btn-sm">
-          <i className="fas fa-chart-line mr-2"></i>
-          <span className="hidden sm:inline">Live Stats</span>
-        </button>
       </div>
     </div>
   );

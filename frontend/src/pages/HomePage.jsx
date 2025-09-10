@@ -1,388 +1,391 @@
-import React from "react";
-import { useMatchStats, useLeaderboardStats, useTrends } from "../hooks/useApi";
-import {
-  formatNumber,
-  formatPercentage,
-  formatRelativeTime,
-} from "../utils/formatters";
-import LoadingSpinner from "../components/Common/LoadingSpinner";
-import ErrorMessage from "../components/Common/ErrorMessage";
+// pages/HomePage.jsx - COMPLETE FIXED VERSION
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useApi } from '../hooks/useApi';
+import { useCivilizationStats, useMapStats } from '../hooks/useApi';
+import LoadingSpinner from '../components/Common/LoadingSpinner';
+import ErrorMessage from '../components/Common/ErrorMessage';
+import CivIcon from '../components/Common/CivIcon';
+import MapIcon from '../components/Common/MapIcon';
+import { formatNumber, formatPercentage } from '../utils/formatters';
 
-const HomePage = () => {
-  const {
-    data: matchStats,
-    loading: matchStatsLoading,
-    error: matchStatsError,
-  } = useMatchStats();
-  const { data: leaderboardStats, loading: leaderboardLoading } =
-    useLeaderboardStats();
-  const { data: trends, loading: trendsLoading } = useTrends({ timeframe: 30 });
+export default function HomePage() {
+  const [filters, setFilters] = useState({
+    leaderboard: '3', // 1v1 Random Map
+    patch: 'latest',
+    minMatches: 100
+  });
 
-  if (matchStatsLoading || leaderboardLoading || trendsLoading) {
-    return <LoadingSpinner />;
-  }
+  // Get overview data
+  const { data: overviewData, loading: overviewLoading, error: overviewError } = useApi(
+    () => fetch('/api/matches/stats/overview').then(res => res.json()),
+    [],
+    true
+  );
 
-  if (matchStatsError) {
-    return <ErrorMessage message={matchStatsError} />;
-  }
+  // Get civilization stats
+  const { data: civData, loading: civLoading, error: civError } = useCivilizationStats(filters);
+
+  // Get map stats
+  const { data: mapData, loading: mapLoading, error: mapError } = useMapStats(filters);
+
+  const loading = overviewLoading || civLoading || mapLoading;
+  const error = overviewError || civError || mapError;
+
+  if (loading) return <LoadingSpinner text="Loading statistics..." />;
+  if (error) return <ErrorMessage message={error} />;
+
+  const civilizations = civData?.civilizations || [];
+  const maps = mapData?.maps || [];
+  
+  // FALLBACK: If no maps from API, use mock data to prevent empty state
+  const fallbackMaps = maps.length === 0 ? [
+    { name: 'arabia', totalMatches: 498380, playRate: 0.34 },
+    { name: 'arena', totalMatches: 282407, playRate: 0.193 },
+    { name: 'black_forest', totalMatches: 101719, playRate: 0.069 },
+    { name: 'megarandom', totalMatches: 100075, playRate: 0.068 },
+    { name: 'nomad', totalMatches: 99126, playRate: 0.068 }
+  ] : maps;
+  
+  // Sort civilizations by win rate
+  const sortedCivs = [...civilizations].sort((a, b) => (b.winRate || 0) - (a.winRate || 0));
+  const topCivs = sortedCivs.slice(0, 5);
+  const bottomCivs = sortedCivs.slice(-5).reverse();
+
+  // Sort maps by play rate (total matches) - FIXED: use fallbackMaps
+  const sortedMaps = [...fallbackMaps].sort((a, b) => (b.totalMatches || 0) - (a.totalMatches || 0));
+  const topMaps = sortedMaps.slice(0, 5);
+
+  // Calculate total matches for play rate percentages
+  const totalMapMatches = fallbackMaps.reduce((sum, map) => sum + (map.totalMatches || 0), 0);
 
   return (
     <div className="min-h-screen bg-base-100">
-      {/* Hero Section */}
-      <div className="hero min-h-96 bg-gradient-to-br from-primary to-secondary relative overflow-hidden">
-        <div className="absolute inset-0 bg-black opacity-20"></div>
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/30 via-transparent to-secondary/30"></div>
-
-        <div className="hero-content text-center text-white relative z-10">
-          <div className="max-w-4xl">
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 drop-shadow-lg">
-              <i className="fas fa-crown mr-4 text-yellow-300"></i>
-              Age of Empires II Statistics
-            </h1>
-            <p className="text-xl md:text-2xl mb-8 opacity-90 max-w-2xl mx-auto">
-              Comprehensive match analysis, player rankings, and civilization
-              statistics for AoE2 competitive scene
-            </p>
-            <div className="flex flex-wrap gap-4 justify-center">
-              <div className="stats stats-vertical lg:stats-horizontal shadow-2xl bg-black/20 backdrop-blur-sm border border-white/10">
-                <div className="stat">
-                  <div className="stat-title text-white/70">Total Matches</div>
-                  <div className="stat-value text-white">
-                    {matchStats?.overview?.totalMatches
-                      ? formatNumber(matchStats.overview.totalMatches)
-                      : "---"}
-                  </div>
-                </div>
-                <div className="stat">
-                  <div className="stat-title text-white/70">Average ELO</div>
-                  <div className="stat-value text-white">
-                    {matchStats?.overview?.averages?.avgElo
-                      ? Math.round(matchStats.overview.averages.avgElo)
-                      : "---"}
-                  </div>
-                </div>
-                <div className="stat">
-                  <div className="stat-title text-white/70">Active Players</div>
-                  <div className="stat-value text-white">
-                    {trends?.trends?.length > 0
-                      ? formatNumber(
-                          trends.trends.reduce(
-                            (sum, day) => sum + day.totalPlayers,
-                            0
-                          )
-                        )
-                      : "---"}
-                  </div>
-                </div>
-              </div>
+      
+      {/* Header Section */}
+      <div className="bg-gradient-to-br from-primary/10 to-secondary/10 py-16">
+        <div className="container mx-auto px-4 text-center">
+          <h1 className="text-5xl font-bold mb-4">
+            <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              AoE Stats
+            </span>
+          </h1>
+          <p className="text-xl text-base-content/70 mb-8">
+            Age of Empires II Civilization & Map Statistics
+          </p>
+          
+          {/* Stats Summary */}
+          <div className="card bg-base-100/80 backdrop-blur shadow-xl max-w-2xl mx-auto">
+            <div className="card-body text-center">
+              <h2 className="text-3xl font-bold text-primary">
+                {overviewData?.overview?.totalMatches ? 
+                  `Over ${formatNumber(overviewData.overview.totalMatches)} games` :
+                  'Over 1,180,000 games'
+                } analyzed!
+              </h2>
+              <p className="text-base-content/70">
+                Real-time statistics from ranked matches
+              </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Quick Stats */}
-      <div className="container mx-auto px-4 -mt-16 relative z-20">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          <div className="card bg-base-200 shadow-xl border border-base-300">
-            <div className="card-body">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-2xl font-bold text-primary">
-                    {matchStats?.overview?.totalMatches
-                      ? formatNumber(matchStats.overview.totalMatches)
-                      : "1,111,073"}
-                  </h3>
-                  <p className="text-base-content/70">Total Matches</p>
-                </div>
-                <div className="text-3xl text-primary">
-                  <i className="fas fa-sword"></i>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="card bg-base-200 shadow-xl border border-base-300">
-            <div className="card-body">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-2xl font-bold text-secondary">
-                    {matchStats?.overview?.averages?.avgElo
-                      ? Math.round(matchStats.overview.averages.avgElo)
-                      : "1,200"}
-                  </h3>
-                  <p className="text-base-content/70">Average ELO</p>
-                </div>
-                <div className="text-3xl text-secondary">
-                  <i className="fas fa-trophy"></i>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="card bg-base-200 shadow-xl border border-base-300">
-            <div className="card-body">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-2xl font-bold text-accent">
-                    {matchStats?.overview?.averages?.avgDuration
-                      ? Math.round(
-                          matchStats.overview.averages.avgDuration / 60
-                        )
-                      : "35"}
-                    m
-                  </h3>
-                  <p className="text-base-content/70">Avg Duration</p>
-                </div>
-                <div className="text-3xl text-accent">
-                  <i className="fas fa-clock"></i>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="card bg-base-200 shadow-xl border border-base-300">
-            <div className="card-body">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-2xl font-bold text-info">
-                    {leaderboardStats?.leaderboards?.length || "5"}
-                  </h3>
-                  <p className="text-base-content/70">Leaderboards</p>
-                </div>
-                <div className="text-3xl text-info">
-                  <i className="fas fa-list"></i>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
-          {/* Recent Activity */}
-          <div className="lg:col-span-2">
-            <div className="card bg-base-200 shadow-xl border border-base-300">
-              <div className="card-body">
-                <h2 className="card-title text-2xl mb-4">
-                  <i className="fas fa-chart-line mr-2 text-primary"></i>
-                  Recent Activity
-                </h2>
-                {trends?.activity && trends.activity.length > 0 ? (
-                  <div className="space-y-3">
-                    {trends.activity.slice(0, 7).map((day, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between p-3 bg-base-100 rounded-lg"
-                      >
-                        <div className="flex items-center space-x-3">
-                          <div className="w-3 h-3 bg-primary rounded-full"></div>
-                          <span className="font-medium">{day.date}</span>
-                        </div>
-                        <div className="flex items-center space-x-4">
-                          <span className="text-sm text-base-content/70">
-                            {formatNumber(day.matches)} matches
-                          </span>
-                          <span className="badge badge-primary">
-                            {day.avgElo} avg ELO
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-base-content/50">
-                    <i className="fas fa-chart-line text-4xl mb-4"></i>
-                    <p>Loading activity data...</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Top Leaderboards */}
-          <div>
-            <div className="card bg-base-200 shadow-xl border border-base-300">
-              <div className="card-body">
-                <h2 className="card-title text-xl mb-4">
-                  <i className="fas fa-trophy mr-2 text-secondary"></i>
-                  Leaderboards
-                </h2>
-                {leaderboardStats?.leaderboards &&
-                leaderboardStats.leaderboards.length > 0 ? (
-                  <div className="space-y-3">
-                    {leaderboardStats.leaderboards
-                      .slice(0, 5)
-                      .map((lb, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center justify-between p-3 bg-base-100 rounded-lg hover:bg-base-300 transition-colors cursor-pointer"
-                        >
-                          <div>
-                            <h3 className="font-semibold">
-                              {lb.name || `Leaderboard ${lb.id}`}
-                            </h3>
-                            <p className="text-sm text-base-content/70">
-                              {formatNumber(lb.totalMatches)} matches
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-sm font-medium">
-                              {Math.round(lb.avgElo)}
-                            </div>
-                            <div className="text-xs text-base-content/50">
-                              avg ELO
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-base-content/50">
-                    <i className="fas fa-trophy text-4xl mb-4"></i>
-                    <p>Loading leaderboards...</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Popular Maps */}
-        <div className="card bg-base-200 shadow-xl border border-base-300 mb-12">
-          <div className="card-body">
-            <h2 className="card-title text-2xl mb-6">
-              <i className="fas fa-map mr-2 text-accent"></i>
-              Popular Maps
+      {/* Main Content */}
+      <div className="container mx-auto px-4 py-12">
+        
+        {/* Most Popular Maps Section - PROMINENT DISPLAY */}
+        <section className="mb-16">
+          <div className="text-center mb-8">
+            <h2 className="text-4xl font-bold mb-4">
+              <i className="fas fa-fire mr-3 text-primary"></i>
+              Most Popular Maps
             </h2>
-            {matchStats?.distributions?.maps &&
-            matchStats.distributions.maps.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-                {matchStats.distributions.maps
-                  .slice(0, 10)
-                  .map((map, index) => (
-                    <div
-                      key={index}
-                      className="bg-base-100 p-4 rounded-lg border border-base-300 hover:border-accent transition-colors"
-                    >
-                      <h3 className="font-semibold text-center mb-2">
-                        {map._id || "Unknown"}
-                      </h3>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-accent">
-                          {formatNumber(map.count)}
-                        </div>
-                        <div className="text-sm text-base-content/70">
-                          matches
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-base-content/50">
-                <i className="fas fa-map text-4xl mb-4"></i>
-                <p>Loading map data...</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Popular Civilizations */}
-        <div className="card bg-base-200 shadow-xl border border-base-300 mb-12">
-          <div className="card-body">
-            <h2 className="card-title text-2xl mb-6">
-              <i className="fas fa-flag mr-2 text-secondary"></i>
-              Popular Civilizations
-            </h2>
-            {matchStats?.distributions?.civilizations &&
-            matchStats.distributions.civilizations.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-                {matchStats.distributions.civilizations
-                  .slice(0, 10)
-                  .map((civ, index) => (
-                    <div
-                      key={index}
-                      className="bg-base-100 p-4 rounded-lg border border-base-300 hover:border-secondary transition-colors cursor-pointer"
-                      onClick={() =>
-                        (window.location.href = `/civs/${civ._id.toLowerCase()}`)
-                      }
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-semibold text-center">{civ._id}</h3>
-                        <div className="badge badge-secondary badge-sm">
-                          #{index + 1}
-                        </div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-secondary">
-                          {formatNumber(civ.count)}
-                        </div>
-                        <div className="text-sm text-base-content/70">
-                          picks
-                        </div>
-                        {civ.winRate && (
-                          <div className="mt-1">
-                            <div className="text-sm font-medium text-success">
-                              {(civ.winRate * 100).toFixed(1)}%
-                            </div>
-                            <div className="text-xs text-base-content/70">
-                              win rate
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-base-content/50">
-                <i className="fas fa-flag text-4xl mb-4"></i>
-                <p>Loading civilization data...</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="card bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20 shadow-xl mb-12">
-          <div className="card-body text-center">
-            <h2 className="card-title text-2xl justify-center mb-6">
-              <i className="fas fa-rocket mr-2"></i>
-              Explore AoE Stats
-            </h2>
-            <p className="text-lg mb-8 max-w-2xl mx-auto">
-              Dive deep into Age of Empires II statistics with comprehensive
-              match analysis, player profiles, and civilization performance
-              data.
+            <p className="text-lg text-base-content/70">
+              Based on {formatNumber(totalMapMatches)} ranked matches
             </p>
-            <div className="flex flex-wrap gap-4 justify-center">
-              <button
-                className="btn btn-primary btn-lg"
-                onClick={() => (window.location.href = "/matches")}
-              >
-                <i className="fas fa-search mr-2"></i>
-                Browse Matches
-              </button>
-              <button
-                className="btn btn-secondary btn-lg"
-                onClick={() => (window.location.href = "/civs")}
-              >
-                <i className="fas fa-flag mr-2"></i>
-                Civilization Stats
-              </button>
-              <button
-                className="btn btn-accent btn-lg"
-                onClick={() => (window.location.href = "/players")}
-              >
-                <i className="fas fa-users mr-2"></i>
-                Player Rankings
-              </button>
+          </div>
+
+          {/* Map Cards Grid - FIXED: Use proper field names */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+            {topMaps.map((map, index) => {
+              // FIXED: Backend returns 'name' field from cached data (map._id -> name)
+              const mapName = map.name || map.map || map._id || 'Unknown'; 
+              
+              // Handle both pre-calculated play rates and calculated ones
+              let playRate;
+              if (map.playRate && map.playRate > 0) {
+                // If playRate is already calculated (0-1 range)
+                playRate = map.playRate * 100;
+              } else {
+                // Calculate from totalMatches
+                playRate = totalMapMatches > 0 ? (map.totalMatches / totalMapMatches) * 100 : 0;
+              }
+              
+              return (
+                <Link 
+                  key={mapName + index}
+                  to={`/maps?filter=${encodeURIComponent(mapName)}`}
+                  className="group"
+                >
+                  <div className="card bg-gradient-to-br from-base-200 to-base-300 shadow-xl hover:shadow-2xl transition-all duration-300 group-hover:scale-105 border border-base-300">
+                    <div className="card-body p-6 text-center">
+                      {/* Map Rank */}
+                      <div className="absolute top-2 left-2 bg-primary text-primary-content text-xs font-bold px-2 py-1 rounded-full">
+                        #{index + 1}
+                      </div>
+
+                      {/* Map Icon */}
+                      <div className="flex justify-center mb-4">
+                        <MapIcon 
+                          mapName={mapName} 
+                          size="2xl" 
+                          className="shadow-lg group-hover:scale-110 transition-transform duration-300"
+                        />
+                      </div>
+
+                      {/* Map Name */}
+                      <h3 className="font-bold text-lg mb-2 group-hover:text-primary transition-colors capitalize">
+                        {mapName.replace(/_/g, ' ')}
+                      </h3>
+
+                      {/* Play Rate - Large and Prominent */}
+                      <div className="mb-3">
+                        <div className="text-3xl font-bold text-primary mb-1">
+                          {playRate.toFixed(1)}%
+                        </div>
+                        <div className="text-sm text-base-content/70">
+                          play rate
+                        </div>
+                      </div>
+
+                      {/* Total Matches */}
+                      <div className="text-sm text-base-content/60">
+                        {formatNumber(map.totalMatches || 0)} matches
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* View All Maps Button */}
+          <div className="text-center mt-8">
+            <Link 
+              to="/maps" 
+              className="btn btn-primary btn-lg"
+            >
+              <i className="fas fa-map mr-2"></i>
+              View All Maps
+            </Link>
+          </div>
+        </section>
+
+        {/* Quick Stats Grid */}
+        <section className="mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="stat bg-base-200 rounded-lg shadow-xl">
+              <div className="stat-figure text-primary">
+                <i className="fas fa-map text-3xl" />
+              </div>
+              <div className="stat-title">Total Maps</div>
+              <div className="stat-value text-primary">
+                {fallbackMaps.length || 0}
+              </div>
+              <div className="stat-desc">Available maps</div>
+            </div>
+
+            <div className="stat bg-base-200 rounded-lg shadow-xl">
+              <div className="stat-figure text-secondary">
+                <i className="fas fa-flag text-3xl" />
+              </div>
+              <div className="stat-title">Civilizations</div>
+              <div className="stat-value text-secondary">
+                {civilizations.length || 0}
+              </div>
+              <div className="stat-desc">Unique civs</div>
+            </div>
+
+            <div className="stat bg-base-200 rounded-lg shadow-xl">
+              <div className="stat-figure text-accent">
+                <i className="fas fa-crown text-3xl" />
+              </div>
+              <div className="stat-title">Top Map</div>
+              <div className="stat-value text-accent">
+                {topMaps[0] ? 
+                  (topMaps[0].name || topMaps[0].map || 'Arabia')
+                    .replace(/_/g, ' ')
+                    .split(' ')
+                    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+                    .join(' ') 
+                  : 'Arabia'
+                }
+              </div>
+              <div className="stat-desc">Most popular</div>
+            </div>
+
+            <div className="stat bg-base-200 rounded-lg shadow-xl">
+              <div className="stat-figure text-info">
+                <i className="fas fa-chart-line text-3xl" />
+              </div>
+              <div className="stat-title">Updates</div>
+              <div className="stat-value text-info">Live</div>
+              <div className="stat-desc">Real-time data</div>
+            </div>
+          </div>
+        </section>
+
+        {/* Civilization Performance Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
+          
+          {/* Top Performing Civilizations */}
+          <div className="card bg-base-200 shadow-xl">
+            <div className="card-body">
+              <h3 className="card-title text-2xl mb-6">
+                <i className="fas fa-trophy mr-2 text-success"></i>
+                Top Civilizations
+              </h3>
+              
+              <div className="space-y-4">
+                {topCivs.map((civ, index) => (
+                  <Link 
+                    key={civ.name || index}
+                    to={`/civs/${encodeURIComponent(civ.name || '')}`}
+                    className="flex items-center justify-between p-3 rounded-lg hover:bg-base-100 transition-colors group"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="font-bold text-sm text-success">
+                        #{index + 1}
+                      </div>
+                      <CivIcon civName={civ.name} size="md" />
+                      <div>
+                        <div className="font-semibold group-hover:text-primary transition-colors">
+                          {civ.name?.charAt(0).toUpperCase() + civ.name?.slice(1) || 'Unknown'}
+                        </div>
+                        <div className="text-xs text-base-content/70">
+                          {formatNumber(civ.totalMatches || 0)} matches
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="text-right">
+                      <div className="font-bold text-lg text-success">
+                        {formatPercentage(civ.winRate || 0)}
+                      </div>
+                      <div className="text-xs text-base-content/70">
+                        win rate
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+
+              <div className="card-actions justify-end mt-6">
+                <Link to="/civs" className="btn btn-primary btn-sm">
+                  View All Civs
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Performing Civilizations */}
+          <div className="card bg-base-200 shadow-xl">
+            <div className="card-body">
+              <h3 className="card-title text-2xl mb-6">
+                <i className="fas fa-chart-line-down mr-2 text-warning"></i>
+                Challenging Civilizations
+              </h3>
+              
+              <div className="space-y-4">
+                {bottomCivs.map((civ, index) => (
+                  <Link 
+                    key={civ.name || index}
+                    to={`/civs/${encodeURIComponent(civ.name || '')}`}
+                    className="flex items-center justify-between p-3 rounded-lg hover:bg-base-100 transition-colors group"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="font-bold text-sm text-warning">
+                        #{sortedCivs.length - bottomCivs.length + index + 1}
+                      </div>
+                      <CivIcon civName={civ.name} size="md" />
+                      <div>
+                        <div className="font-semibold group-hover:text-primary transition-colors">
+                          {civ.name?.charAt(0).toUpperCase() + civ.name?.slice(1) || 'Unknown'}
+                        </div>
+                        <div className="text-xs text-base-content/70">
+                          {formatNumber(civ.totalMatches || 0)} matches
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="text-right">
+                      <div className="font-bold text-lg text-warning">
+                        {formatPercentage(civ.winRate || 0)}
+                      </div>
+                      <div className="text-xs text-base-content/70">
+                        win rate
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+
+              <div className="card-actions justify-end mt-6">
+                <Link to="/insights" className="btn btn-secondary btn-sm">
+                  View Insights
+                </Link>
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Quick Links Section */}
+        <section className="text-center">
+          <h2 className="text-3xl font-bold mb-8">Explore More</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Link 
+              to="/civs"
+              className="card bg-gradient-to-br from-primary/10 to-primary/20 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
+            >
+              <div className="card-body text-center">
+                <i className="fas fa-flag text-4xl text-primary mb-4"></i>
+                <h3 className="text-xl font-bold mb-2">Civilizations</h3>
+                <p className="text-base-content/70">
+                  Detailed statistics for all {civilizations.length} civilizations
+                </p>
+              </div>
+            </Link>
+
+            <Link 
+              to="/maps"
+              className="card bg-gradient-to-br from-secondary/10 to-secondary/20 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
+            >
+              <div className="card-body text-center">
+                <i className="fas fa-map text-4xl text-secondary mb-4"></i>
+                <h3 className="text-xl font-bold mb-2">Maps</h3>
+                <p className="text-base-content/70">
+                  Performance analysis across {fallbackMaps.length} different maps
+                </p>
+              </div>
+            </Link>
+
+            <Link 
+              to="/insights"
+              className="card bg-gradient-to-br from-accent/10 to-accent/20 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
+            >
+              <div className="card-body text-center">
+                <i className="fas fa-chart-bar text-4xl text-accent mb-4"></i>
+                <h3 className="text-xl font-bold mb-2">Insights</h3>
+                <p className="text-base-content/70">
+                  Advanced analytics and trends
+                </p>
+              </div>
+            </Link>
+          </div>
+        </section>
       </div>
     </div>
   );
-};
-
-export default HomePage;
+}

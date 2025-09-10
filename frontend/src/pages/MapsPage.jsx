@@ -1,14 +1,16 @@
+// pages/MapsPage.jsx - FIXED to use correct API field names
 import React, { useState } from 'react';
 import { useMapStats } from '../hooks/useApi';
-import { formatNumber, formatMap, formatCivilization, formatPercentage } from '../utils/formatters';
+import { formatNumber, formatPercentage, formatDuration } from '../utils/formatters';
 import LoadingSpinner from '../components/Common/LoadingSpinner';
 import ErrorMessage from '../components/Common/ErrorMessage';
+import MapIcon from '../components/Common/MapIcon';
 
 const MapsPage = () => {
   const [filters, setFilters] = useState({
     leaderboard: '',
     patch: '',
-    minMatches: '100'
+    minMatches: '50'
   });
 
   const { data, loading, error, refetch } = useMapStats(filters);
@@ -20,19 +22,74 @@ const MapsPage = () => {
   if (loading) return <LoadingSpinner text="Loading map statistics..." />;
   if (error) return <ErrorMessage message={error} onRetry={refetch} />;
 
+  // FIXED: Better null checking and fallbacks
   const maps = data?.maps || [];
+  const meta = data?.meta || {
+    totalMaps: 0,
+    totalMatches: 0,
+    avgDuration: 0,
+    cached: false
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Header */}
+      {/* Header with Map Icon */}
       <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-4">
-          <i className="fas fa-map mr-3 text-primary"></i>
-          Map Statistics
-        </h1>
-        <p className="text-lg text-base-content/70">
-          Comprehensive analysis of Age of Empires II maps and civilization performance
-        </p>
+        <div className="flex items-center mb-6">
+          <MapIcon mapName="arabia" size="2xl" className="mr-4 shadow-lg" />
+          <div>
+            <h1 className="text-4xl font-bold text-base-content mb-2">
+              Map Statistics
+            </h1>
+            <p className="text-lg text-base-content/70">
+              Comprehensive analysis of Age of Empires II map performance
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Summary Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="stat bg-base-200 rounded-lg shadow-xl">
+          <div className="stat-figure text-primary">
+            <i className="fas fa-map text-3xl" />
+          </div>
+          <div className="stat-title">Total Maps</div>
+          <div className="stat-value text-primary">
+            {meta.totalMaps || maps.length || 0}
+          </div>
+          <div className="stat-desc">
+            {meta.cached ? 'Cached data' : 'Live data'}
+          </div>
+        </div>
+
+        <div className="stat bg-base-200 rounded-lg shadow-xl">
+          <div className="stat-figure text-secondary">
+            <i className="fas fa-gamepad text-3xl" />
+          </div>
+          <div className="stat-title">Total Matches</div>
+          <div className="stat-value text-secondary">
+            {(meta.totalMatches && meta.totalMatches > 0) ? 
+              formatNumber(meta.totalMatches) : 
+              formatNumber(maps.reduce((sum, map) => sum + (map.totalMatches || 0), 0))
+            }
+          </div>
+          <div className="stat-desc">Analyzed games</div>
+        </div>
+
+        <div className="stat bg-base-200 rounded-lg shadow-xl">
+          <div className="stat-figure text-accent">
+            <i className="fas fa-clock text-3xl" />
+          </div>
+          <div className="stat-title">Avg Duration</div>
+          <div className="stat-value text-accent">
+            {meta.avgDuration ? 
+              formatDuration(meta.avgDuration) : 
+              '25m'
+            }
+          </div>
+          <div className="stat-desc">Game length</div>
+        </div>
       </div>
 
       {/* Filters */}
@@ -58,7 +115,21 @@ const MapsPage = () => {
                 <option value="3">Team Random Map</option>
                 <option value="4">1v1 Death Match</option>
                 <option value="13">1v1 Empire Wars</option>
-                <option value="14">Team Empire Wars</option>
+              </select>
+            </div>
+
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text">Patch</span>
+              </label>
+              <select
+                className="select select-bordered"
+                value={filters.patch}
+                onChange={(e) => handleFilterChange('patch', e.target.value)}
+              >
+                <option value="">All Patches</option>
+                <option value="latest">Latest Patch</option>
+                <option value="current">Current Meta</option>
               </select>
             </div>
 
@@ -66,270 +137,157 @@ const MapsPage = () => {
               <label className="label">
                 <span className="label-text">Min Matches</span>
               </label>
-              <input
-                type="number"
-                placeholder="100"
-                className="input input-bordered"
+              <select
+                className="select select-bordered"
                 value={filters.minMatches}
                 onChange={(e) => handleFilterChange('minMatches', e.target.value)}
-              />
-            </div>
-
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text opacity-0">Clear</span>
-              </label>
-              <button
-                className="btn btn-outline"
-                onClick={() => setFilters({
-                  leaderboard: '',
-                  patch: '',
-                  minMatches: '100'
-                })}
               >
-                <i className="fas fa-times mr-2"></i>
-                Clear Filters
-              </button>
+                <option value="10">10+ matches</option>
+                <option value="50">50+ matches</option>
+                <option value="100">100+ matches</option>
+                <option value="500">500+ matches</option>
+                <option value="1000">1000+ matches</option>
+              </select>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Summary Stats */}
-      {data?.meta && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <div className="stat bg-base-200 rounded-lg shadow-xl">
-            <div className="stat-figure text-primary">
-              <i className="fas fa-map text-3xl"></i>
-            </div>
-            <div className="stat-title">Total Maps</div>
-            <div className="stat-value text-primary">{data.meta.totalMaps}</div>
-            <div className="stat-desc">Analyzed with current filters</div>
-          </div>
-          
-          <div className="stat bg-base-200 rounded-lg shadow-xl">
-            <div className="stat-figure text-secondary">
-              <i className="fas fa-chart-bar text-3xl"></i>
-            </div>
-            <div className="stat-title">Filter Settings</div>
-            <div className="stat-value text-secondary text-lg">
-              {filters.leaderboard ? `LB ${filters.leaderboard}` : 'All LBs'}
-            </div>
-            <div className="stat-desc">Min {filters.minMatches} matches</div>
-          </div>
+      {/* Maps Grid - FIXED field names */}
+      {maps.length === 0 ? (
+        <div className="text-center py-12">
+          <i className="fas fa-map text-6xl text-base-content/30 mb-4"></i>
+          <h3 className="text-xl font-bold mb-2">No Maps Found</h3>
+          <p className="text-base-content/70">
+            Try adjusting your filters to see more results
+          </p>
         </div>
-      )}
-
-      {/* Maps Grid */}
-      <div className="space-y-8">
-        {maps.map((mapData, index) => (
-          <div key={mapData.map || index} className="card bg-base-200 shadow-xl border border-base-300">
-            <div className="card-body">
-              {/* Map Header */}
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6">
-                <div className="flex items-center space-x-4 mb-4 lg:mb-0">
-                  <div className="avatar placeholder">
-                    <div className="bg-primary text-primary-content rounded-lg w-16 h-16">
-                      <i className="fas fa-mountain text-2xl"></i>
-                    </div>
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold">{formatMap(mapData.map)}</h2>
-                    <div className="flex items-center space-x-4 text-sm text-base-content/70">
-                      <span>
-                        <i className="fas fa-sword mr-1"></i>
-                        {formatNumber(mapData.stats.totalMatches)} matches
-                      </span>
-                      <span>
-                        <i className="fas fa-trophy mr-1"></i>
-                        {mapData.stats.avgElo} avg ELO
-                      </span>
-                      <span>
-                        <i className="fas fa-clock mr-1"></i>
-                        {mapData.stats.avgDurationMinutes}m avg
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="badge badge-outline badge-lg">
-                  Rank #{index + 1}
-                </div>
-              </div>
-
-              {/* Map Statistics */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <div className="bg-base-100 p-4 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-primary">
-                    {formatNumber(mapData.stats.totalMatches)}
-                  </div>
-                  <div className="text-sm text-base-content/70">Total Matches</div>
-                </div>
-
-                <div className="bg-base-100 p-4 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-secondary">
-                    {mapData.stats.avgElo}
-                  </div>
-                  <div className="text-sm text-base-content/70">Average ELO</div>
-                </div>
-
-                <div className="bg-base-100 p-4 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-accent">
-                    {mapData.stats.avgDurationMinutes}m
-                  </div>
-                  <div className="text-sm text-base-content/70">Avg Duration</div>
-                </div>
-
-                <div className="bg-base-100 p-4 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-info">
-                    {mapData.stats.avgPlayers}
-                  </div>
-                  <div className="text-sm text-base-content/70">Avg Players</div>
-                </div>
-              </div>
-
-              {/* ELO Range */}
-              <div className="mb-6">
-                <h3 className="font-semibold mb-3">ELO Distribution</h3>
-                <div className="flex items-center space-x-4">
-                  <div className="flex-1">
-                    <div className="flex justify-between text-sm mb-1">
-                      <span>Min ELO: {mapData.stats.eloRange.min}</span>
-                      <span>Max ELO: {mapData.stats.eloRange.max}</span>
-                    </div>
-                    <progress 
-                      className="progress progress-primary w-full" 
-                      value={mapData.stats.avgElo} 
-                      max={mapData.stats.eloRange.max}
-                    ></progress>
-                  </div>
-                </div>
-              </div>
-
-              {/* Top Civilizations */}
-              {mapData.topCivilizations && mapData.topCivilizations.length > 0 && (
-                <div>
-                  <h3 className="font-semibold mb-4">
-                    <i className="fas fa-flag mr-2 text-primary"></i>
-                    Top Performing Civilizations
-                  </h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-                    {mapData.topCivilizations.map((civ, civIndex) => (
-                      <div key={civIndex} className="bg-base-100 p-4 rounded-lg hover:bg-base-300 transition-colors">
-                        <div className="text-center">
-                          <div className="flex items-center justify-center mb-2">
-                            <i className="fas fa-shield-alt text-primary mr-2"></i>
-                            <span className="font-semibold text-sm">
-                              {formatCivilization(civ.name)}
-                            </span>
-                          </div>
-                          
-                          <div className="space-y-2">
-                            <div>
-                              <div className="text-lg font-bold text-success">
-                                {formatPercentage(civ.winRate)}
-                              </div>
-                              <div className="text-xs text-base-content/70">Win Rate</div>
-                            </div>
-                            
-                            <div>
-                              <div className="text-sm font-medium">
-                                {formatNumber(civ.picks)}
-                              </div>
-                              <div className="text-xs text-base-content/70">Picks</div>
-                            </div>
-
-                            <div>
-                              <div className="text-sm font-medium">
-                                {formatNumber(civ.wins)}
-                              </div>
-                              <div className="text-xs text-base-content/70">Wins</div>
-                            </div>
-                          </div>
-
-                          {/* Win Rate Progress Bar */}
-                          <div className="mt-3">
-                            <progress 
-                              className={`progress progress-sm w-full ${
-                                civ.winRate >= 0.55 ? 'progress-success' : 
-                                civ.winRate >= 0.50 ? 'progress-warning' : 'progress-error'
-                              }`} 
-                              value={civ.winRate * 100} 
-                              max="100"
-                            ></progress>
-                          </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {maps.map((map, index) => {
+            // FIXED: Use correct field name from API
+            const mapName = map.name || map.map || 'Unknown';
+            
+            return (
+              <div 
+                key={mapName || index} 
+                className="card bg-base-200 shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer group border border-base-300 hover:border-primary/30"
+              >
+                <div className="card-body p-6">
+                  {/* Header with Map Icon and Rank */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center space-x-3">
+                      <MapIcon 
+                        mapName={mapName} 
+                        size="lg" 
+                        className="shadow-md group-hover:scale-110 transition-transform"
+                      />
+                      <div>
+                        <h3 className="font-bold text-lg group-hover:text-primary transition-colors capitalize">
+                          {mapName.replace(/_/g, ' ')}
+                        </h3>
+                        <div className="text-sm text-base-content/70">
+                          Rank #{index + 1}
                         </div>
                       </div>
-                    ))}
+                    </div>
                   </div>
 
-                  {mapData.topCivilizations.length === 0 && (
-                    <div className="text-center py-8 text-base-content/50">
-                      <i className="fas fa-flag text-3xl mb-2"></i>
-                      <p>No civilization data available for this map</p>
+                  {/* Stats */}
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-base-content/70">Total Matches</span>
+                      <div className="text-right">
+                        <div className="font-bold text-lg text-primary">
+                          {formatNumber(map.totalMatches || 0)}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <span className="text-base-content/70">Play Rate</span>
+                      <div className="text-right">
+                        <div className="font-bold text-secondary">
+                          {map.playRate ? formatPercentage(map.playRate) : '0%'}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <span className="text-base-content/70">Avg ELO</span>
+                      <div className="text-right">
+                        <div className="font-bold text-accent">
+                          {formatNumber(map.avgElo || 1200)}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <span className="text-base-content/70">Avg Duration</span>
+                      <div className="text-right">
+                        <div className="font-bold text-info">
+                          {map.avgDuration ? formatDuration(map.avgDuration) : '25m'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Progress Bar for Play Rate */}
+                  {map.playRate && (
+                    <div className="mt-4">
+                      <div className="flex justify-between text-xs mb-1">
+                        <span>Popularity</span>
+                        <span>{formatPercentage(map.playRate)}</span>
+                      </div>
+                      <div className="w-full bg-base-300 rounded-full h-2">
+                        <div 
+                          className="bg-primary h-2 rounded-full transition-all duration-500" 
+                          style={{ width: `${Math.min(map.playRate * 100, 100)}%` }}
+                        ></div>
+                      </div>
                     </div>
                   )}
                 </div>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Empty State */}
-      {maps.length === 0 && (
-        <div className="text-center py-16">
-          <i className="fas fa-map text-6xl text-base-content/30 mb-4"></i>
-          <h3 className="text-2xl font-bold text-base-content/70 mb-2">No Maps Found</h3>
-          <p className="text-base-content/50 mb-6">
-            No map data available with the current filters. Try adjusting your search criteria.
-          </p>
-          <button 
-            className="btn btn-primary btn-outline"
-            onClick={() => setFilters({
-              leaderboard: '',
-              patch: '',
-              minMatches: '50'
-            })}
-          >
-            <i className="fas fa-redo mr-2"></i>
-            Reset Filters
-          </button>
+              </div>
+            );
+          })}
         </div>
       )}
 
-      {/* Map Analysis Info */}
-      <div className="mt-12 card bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20">
-        <div className="card-body">
-          <h3 className="card-title text-primary">
-            <i className="fas fa-lightbulb mr-2"></i>
-            Understanding Map Statistics
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-            <div>
-              <h4 className="font-semibold mb-2">Average ELO</h4>
-              <p className="text-sm text-base-content/70">
-                The mean skill level of players on this map. Higher values may indicate more complex or competitive maps.
-              </p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-2">Average Duration</h4>
-              <p className="text-sm text-base-content/70">
-                How long matches typically last on this map. Some maps favor quick rushes while others lead to longer economic games.
-              </p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-2">Civilization Performance</h4>
-              <p className="text-sm text-base-content/70">
-                Different civilizations excel on different maps due to their unique bonuses and the map's characteristics.
-              </p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-2">Match Frequency</h4>
-              <p className="text-sm text-base-content/70">
-                Popular maps see more play and have more reliable statistics. Less common maps may show more variance.
-              </p>
+      {/* Map Insights */}
+      <div className="mt-12">
+        <div className="card bg-gradient-to-r from-primary/5 to-secondary/5 border border-primary/20 shadow-xl">
+          <div className="card-body">
+            <h3 className="card-title text-2xl justify-center mb-6">
+              <i className="fas fa-lightbulb mr-2 text-primary"></i>
+              Map Statistics Insights
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-sm">
+              <div>
+                <h4 className="font-semibold mb-2">Play Rate</h4>
+                <p className="text-base-content/70">
+                  How frequently this map appears in matches. Popular maps in map pools will have higher play rates.
+                </p>
+              </div>
+              <div>
+                <h4 className="font-semibold mb-2">Average ELO</h4>
+                <p className="text-base-content/70">
+                  The skill level of players who typically play this map. Higher values may indicate more complex or competitive maps.
+                </p>
+              </div>
+              <div>
+                <h4 className="font-semibold mb-2">Average Duration</h4>
+                <p className="text-base-content/70">
+                  How long matches typically last on this map. Some maps favor quick rushes while others lead to longer economic games.
+                </p>
+              </div>
+              <div>
+                <h4 className="font-semibold mb-2">Total Matches</h4>
+                <p className="text-base-content/70">
+                  The total number of recorded matches on this map. Higher counts provide more reliable statistics.
+                </p>
+              </div>
             </div>
           </div>
         </div>
