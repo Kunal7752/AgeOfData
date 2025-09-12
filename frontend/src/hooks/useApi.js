@@ -193,17 +193,16 @@ export const useMapStats = (params = {}) => {
 };
 
 // Player profile hook with caching
+// hooks/useApi.js
 export const usePlayer = (profileId) => {
   return useApi(
-    () => apiService.getPlayerProfile(profileId),
+    (opt) => apiService.getPlayerProfile(profileId, opt),
     [profileId],
-    !profileId,
-    { 
-      cacheKey: `player-${profileId}`,
-      retryAttempts: 2
-    }
+    !!profileId, // ✅ only run when we have an id
+    { cacheKey: `player-${profileId}`, retryAttempts: 2 }
   );
 };
+
 
 // Player rankings with optimized pagination
 export const usePlayerRankings = (leaderboard, params = {}) => {
