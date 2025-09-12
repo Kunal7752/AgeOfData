@@ -16,9 +16,9 @@ import {
   Legend
 } from 'recharts';
 import { useCivilizationStats } from '../hooks/useApi';
-import LoadingSpinner from '../components/Common/LoadingSpinner';
-import ErrorMessage from '../components/Common/ErrorMessage';
-import CivIcon from '../components/Common/CivIcon';
+import LoadingSpinner from '../components/common/LoadingSpinner';
+import ErrorMessage from '../components/common/ErrorMessage';
+import CivIcon from '../components/common/CivIcon';
 import { formatPercentage, formatNumber } from '../utils/formatters';
 
 // Simple color scheme

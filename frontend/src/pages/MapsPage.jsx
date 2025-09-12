@@ -2,9 +2,9 @@
 import React, { useState } from 'react';
 import { useMapStats } from '../hooks/useApi';
 import { formatNumber, formatPercentage, formatDuration } from '../utils/formatters';
-import LoadingSpinner from '../components/Common/LoadingSpinner';
-import ErrorMessage from '../components/Common/ErrorMessage';
-import MapIcon from '../components/Common/MapIcon';
+import LoadingSpinner from '../components/common/LoadingSpinner';
+import ErrorMessage from '../components/common/ErrorMessage';
+import MapIcon from '../components/common/MapIcon';
 
 const MapsPage = () => {
   const [filters, setFilters] = useState({

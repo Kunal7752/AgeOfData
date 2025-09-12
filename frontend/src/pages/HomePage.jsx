@@ -3,10 +3,10 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 import { useCivilizationStats, useMapStats } from '../hooks/useApi';
-import LoadingSpinner from '../components/Common/LoadingSpinner';
-import ErrorMessage from '../components/Common/ErrorMessage';
-import CivIcon from '../components/Common/CivIcon';
-import MapIcon from '../components/Common/MapIcon';
+import LoadingSpinner from '../components/common/LoadingSpinner';
+import ErrorMessage from '../components/common/ErrorMessage';
+import CivIcon from '../components/common/CivIcon';
+import MapIcon from '../components/common/MapIcon';
 import { formatNumber, formatPercentage } from '../utils/formatters';
 
 export default function HomePage() {

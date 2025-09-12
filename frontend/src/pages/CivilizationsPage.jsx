@@ -7,9 +7,9 @@ import {
   formatPercentage,
   formatCivilization
 } from '../utils/formatters';
-import LoadingSpinner from '../components/Common/LoadingSpinner';
-import ErrorMessage from '../components/Common/ErrorMessage';
-import CivIcon from '../components/Common/CivIcon';
+import LoadingSpinner from '../components/common/LoadingSpinner';
+import ErrorMessage from '../components/common/ErrorMessage';
+import CivIcon from '../components/common/CivIcon';
 
 const CivilizationsPage = () => {
   const navigate = useNavigate();

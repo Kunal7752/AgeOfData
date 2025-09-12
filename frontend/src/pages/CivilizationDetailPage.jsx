@@ -16,11 +16,11 @@ import {
 } from "recharts";
 
 import { useCivilizationDetail } from "../hooks/useApi";
-import LoadingSpinner from "../components/Common/LoadingSpinner";
-import ChartWithLoading from "../components/Common/ChartWithLoading";
-import ErrorMessage from "../components/Common/ErrorMessage";
-import CivIcon from "../components/Common/CivIcon";
-import MapIcon from "../components/Common/MapIcon";
+import LoadingSpinner from "../components/common/LoadingSpinner";
+import ChartWithLoading from "../components/common/ChartWithLoading";
+import ErrorMessage from "../components/common/ErrorMessage";
+import CivIcon from "../components/common/CivIcon";
+import MapIcon from "../components/common/MapIcon";
 import {
   formatPercentage,
   formatNumber,
