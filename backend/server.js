@@ -26,7 +26,7 @@ app.use(helmet()); // Security headers
 app.use(compression()); // Gzip compression
 app.use(cors({
   origin: process.env.CORS_ORIGIN || '*',
-  credentials: true
+  credentials: false
 })); // CORS
 app.use(morgan('combined')); // Logging
 app.use(express.json({ limit: '10mb' }));
