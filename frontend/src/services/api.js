@@ -8,7 +8,7 @@ const getApiBaseUrl = () => {
   }
   
   // For production, use same origin with /api path
-  return `${window.location.protocol}//${window.location.host}/api`;
+  return `https://ageofdata-production.up.railway.app/api`;
 };
 
 const API_BASE_URL = getApiBaseUrl();
