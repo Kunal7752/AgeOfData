@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
-import { useCivilizationStats, useMapStats } from '../hooks/useApi';
+import { useCivilizationStats, useMapStats, useMatchStats } from '../hooks/useApi';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import ErrorMessage from '../components/common/ErrorMessage';
 import CivIcon from '../components/common/CivIcon';
@@ -16,12 +16,8 @@ export default function HomePage() {
     minMatches: 100
   });
 
-  // Get overview data
-  const { data: overviewData, loading: overviewLoading, error: overviewError } = useApi(
-    () => fetch('/api/matches/stats/overview').then(res => res.json()),
-    [],
-    true
-  );
+  // 🔥 FIXED: Use proper useMatchStats hook instead of direct fetch
+  const { data: overviewData, loading: overviewLoading, error: overviewError } = useMatchStats();
 
   // Get civilization stats
   const { data: civData, loading: civLoading, error: civError } = useCivilizationStats(filters);
