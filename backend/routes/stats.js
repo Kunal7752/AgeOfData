@@ -1,4 +1,3 @@
-// routes/stats.js - Fixed and optimized with missing endpoints
 const mongoose = require("mongoose");
 const express = require("express");
 const router = express.Router();
