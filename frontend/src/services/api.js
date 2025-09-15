@@ -7,8 +7,8 @@ const getApiBaseUrl = () => {
     return 'http://localhost:3000/api';
   }
   
-  // For production, use same origin with /api path
-  return `https://ageofdata-production.up.railway.app/api`;
+  // 🔥 PRODUCTION: Always use Railway backend URL
+  return 'https://ageofdata-production.up.railway.app/api';
 };
 
 const API_BASE_URL = getApiBaseUrl();
@@ -20,6 +20,13 @@ class ApiService {
     this.cacheTimeout = 5 * 60 * 1000; // 5 minutes
     
     console.log('🌐 API Service initialized with base URL:', this.baseURL);
+    
+    // 🚨 ALERT: If this shows wrong URL, check deployment
+    if (!this.baseURL.includes('ageofdata-production.up.railway.app')) {
+      console.error('🚨 WRONG API URL! Should be Railway backend, not Vercel!');
+      console.error('🚨 Current URL:', this.baseURL);
+      console.error('🚨 Expected URL: https://ageofdata-production.up.railway.app/api');
+    }
   }
 
   // Enhanced request method with caching and retry logic
