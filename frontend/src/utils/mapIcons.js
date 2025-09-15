@@ -49,7 +49,7 @@ const mapIcons = {
   'sacred springs': '/images/maps/sacredsprings.webp',
   'sandbank': '/images/maps/sandbank.webp',
   'scandinavia': '/images/maps/scandinavia.webp',
-  'four lakes': '/images/maps/fourlakes.webp',
+  'four_lakes': '/images/maps/four_lakes.webp',
   'african_clearing': '/images/maps/african_clearing.webp',
   'aftermath': '/images/maps/aftermath.webp',
   'amazon tunnel': '/images/maps/amazontunnel.webp',
@@ -93,6 +93,10 @@ const mapIcons = {
   'shoals': '/images/maps/shoals.webp',
   'islands': '/images/maps/islands.webp',
   'Black forest': '/images/maps/black_forest.webp',
+  'graveyards': '/images/maps/graveyards.webp',
+  'sherwood_forest': '/images/maps/sherwood_forest.webp',
+  'oasis': '/images/maps/oasis.webp', 
+  'team_glaciers': '/images/maps/team_glaciers.webp',
 };
 
 // Get map icon URL

@@ -92,67 +92,6 @@ const MapsPage = () => {
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="card bg-base-200 shadow-xl mb-8">
-        <div className="card-body">
-          <h2 className="card-title mb-4">
-            <i className="fas fa-filter mr-2"></i>
-            Filters
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">Leaderboard</span>
-              </label>
-              <select
-                className="select select-bordered"
-                value={filters.leaderboard}
-                onChange={(e) => handleFilterChange('leaderboard', e.target.value)}
-              >
-                <option value="">All Leaderboards</option>
-                <option value="2">1v1 Random Map</option>
-                <option value="3">Team Random Map</option>
-                <option value="4">1v1 Death Match</option>
-                <option value="13">1v1 Empire Wars</option>
-              </select>
-            </div>
-
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">Patch</span>
-              </label>
-              <select
-                className="select select-bordered"
-                value={filters.patch}
-                onChange={(e) => handleFilterChange('patch', e.target.value)}
-              >
-                <option value="">All Patches</option>
-                <option value="latest">Latest Patch</option>
-                <option value="current">Current Meta</option>
-              </select>
-            </div>
-
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">Min Matches</span>
-              </label>
-              <select
-                className="select select-bordered"
-                value={filters.minMatches}
-                onChange={(e) => handleFilterChange('minMatches', e.target.value)}
-              >
-                <option value="10">10+ matches</option>
-                <option value="50">50+ matches</option>
-                <option value="100">100+ matches</option>
-                <option value="500">500+ matches</option>
-                <option value="1000">1000+ matches</option>
-              </select>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Maps Grid - FIXED field names */}
       {maps.length === 0 ? (
         <div className="text-center py-12">
